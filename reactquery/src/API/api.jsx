@@ -23,3 +23,7 @@ export const fetchIndividual=async(id)=>{
 
     }
 }
+
+export const deletePost=(id)=>{
+    return api.delete(`/posts/${id}`)
+}

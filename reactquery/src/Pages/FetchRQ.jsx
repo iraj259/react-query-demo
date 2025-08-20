@@ -1,11 +1,15 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { fetchPosts } from "../API/api";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deletePost, fetchPosts } from "../API/api";
 import { FiFileText } from "react-icons/fi";
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
 
 const FetchRQ = () => {
-  const [pageNumber, setPageNumber] = useState(1);
+  const [pageNumber, setPageNumber] = useState(0);
+
+const queryClient = useQueryClient()
+
+
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["posts", pageNumber],
     queryFn: ()=>fetchPosts(pageNumber),
@@ -14,6 +18,15 @@ const FetchRQ = () => {
     // refetch data time esp for stock market updates(polling)
     // refetchIntervalInBackground:1000
   });
+
+   const deleteMutation = useMutation({
+   mutationFn:(id)=>deletePost(id),
+   onSuccess:(data,id)=>{
+    queryClient.setQueryData(["posts", pageNumber],(curElem)=>{
+      return curElem?.filter((post)=>post.id!==id)
+    })
+   }
+  })
 
   if (isPending) return <p>Loading....</p>;
   if (isError) return <p>Error: {error.message || "Something went wrong...."}</p>;
@@ -56,12 +69,13 @@ const FetchRQ = () => {
                   </span>
                 </NavLink>
               </p>
+              <button onClick={()=>deleteMutation.mutate(id)}>Delete</button>
             </li>
           );
         })}
       </ul>
       <div className="flex justify-center items-center mt-12 space-x-4">
-        <button disabled={pageNumber===1?true:false} onClick={()=>setPageNumber((prev)=>prev-1)}>Previous</button>
+        <button disabled={pageNumber===0?true:false} onClick={()=>setPageNumber((prev)=>prev-1)}>Previous</button>
         <h2 className="text-2xl font-bold text-[#EAF4F4] font-mono">{pageNumber}</h2>
         <button onClick={()=>setPageNumber((prev)=>prev+1)}>Next</button>
       </div>
