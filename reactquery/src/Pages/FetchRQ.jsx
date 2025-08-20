@@ -1,12 +1,22 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { fetchPosts } from "../API/api";
 import { FiFileText } from "react-icons/fi";
+import { NavLink } from "react-router-dom";
+import { useState } from "react";
 
 const FetchRQ = () => {
-  const { data = [] } = useQuery({
-    queryKey: ["posts"],
-    queryFn: fetchPosts,
+  const [pageNumber, setPageNumber] = useState(1);
+  const { data, isPending, isError, error } = useQuery({
+    queryKey: ["posts", pageNumber],
+    queryFn: ()=>fetchPosts(pageNumber),
+    staleTime: 10000,
+    placeholderData:keepPreviousData,
+    // refetch data time esp for stock market updates(polling)
+    // refetchIntervalInBackground:1000
   });
+
+  if (isPending) return <p>Loading....</p>;
+  if (isError) return <p>Error: {error.message || "Something went wrong...."}</p>;
 
   return (
     <div className="max-w-7xl mx-auto p-8 sm:p-12 min-h-screen font-sans">
@@ -40,14 +50,21 @@ const FetchRQ = () => {
 
               <p className="text-gray-700 leading-relaxed text-sm line-clamp-4">
                 {body}
-                <span className="text-[#6B9080] font-semibold ml-1 cursor-pointer hover:underline">
-                  …read more
-                </span>
+                <NavLink to={`/rq/${id}`}>
+                  <span className="text-[#6B9080] font-semibold ml-1 cursor-pointer hover:underline">
+                    …read more
+                  </span>
+                </NavLink>
               </p>
             </li>
           );
         })}
       </ul>
+      <div className="flex justify-center items-center mt-12 space-x-4">
+        <button disabled={pageNumber===1?true:false} onClick={()=>setPageNumber((prev)=>prev-1)}>Previous</button>
+        <h2 className="text-2xl font-bold text-[#EAF4F4] font-mono">{pageNumber}</h2>
+        <button onClick={()=>setPageNumber((prev)=>prev+1)}>Next</button>
+      </div>
     </div>
   );
 };
