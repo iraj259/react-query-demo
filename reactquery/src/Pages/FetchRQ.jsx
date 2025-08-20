@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deletePost, fetchPosts } from "../API/api";
+import { deletePost, fetchPosts, updatePost } from "../API/api";
 import { FiFileText } from "react-icons/fi";
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
@@ -27,6 +27,20 @@ const queryClient = useQueryClient()
     })
    }
   })
+
+const updateMutation = useMutation({
+  mutationFn: (id) => updatePost(id),
+  onSuccess: (apiData, postId) => {
+    queryClient.setQueryData(["posts", pageNumber], (postsData) => {
+      return postsData?.map((curPost) =>
+        curPost.id === postId
+          ? { ...curPost, title: apiData.title } 
+          : curPost
+      );
+    });
+  },
+});
+
 
   if (isPending) return <p>Loading....</p>;
   if (isError) return <p>Error: {error.message || "Something went wrong...."}</p>;
@@ -69,7 +83,21 @@ const queryClient = useQueryClient()
                   </span>
                 </NavLink>
               </p>
-              <button onClick={()=>deleteMutation.mutate(id)}>Delete</button>
+ <div className="mt-3">
+  <button
+    onClick={() => deleteMutation.mutate(id)}
+    className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-300"
+  >
+    Delete
+  </button>
+  <button
+       onClick={() => updateMutation.mutate(id)}
+
+    className="bg-[#4a6b5a] hover:bg-[#3d5746] text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-300 ml-4"
+  >
+    Update
+  </button>
+</div>
             </li>
           );
         })}
